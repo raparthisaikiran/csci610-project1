@@ -210,6 +210,7 @@ fn rename_file(dir_name: &str, file_name: &str, extension: &str, new_name: &str,
                     new_path,
                     convert_time_format(new_time)
                 );
+                println!();
             }
         }
         Err(e) => println!("Error renaming {}: {}", file_name, e),
@@ -277,7 +278,7 @@ fn print_log(dir: &str, filename: &str, extension: &str, original_name: String) 
     let time = get_original_time(&PathBuf::from(path.clone()));
     let formatted_time = convert_time_format(time.unwrap());
     println!(
-        "Old file name: {}/{} and Old file time: {:?}",
+        "Old file name: {}/{}, Old file time: {:?}",
         &dir, &original_name, formatted_time
     );
 }
