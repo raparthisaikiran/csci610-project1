@@ -22,6 +22,7 @@ To Run shell script
 Open terminala and execute following command in the parent directory: 
 * chmod +X run_program.sh
 * ./run_program
+* It promts for user input and enter the time in seconds or 'w' to run weekly
 
 Dependencies
 If you need to add a dependency to your Rust project, update the Cargo.toml file with the dependency name and version number. Then, run cargo build to download and install the dependency.
