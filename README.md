@@ -9,7 +9,7 @@ Cargo package manager (should come with Rust)
 Setup
 
 Follow these steps to set up your Rust project:
-* Clone the project repository:
+* Clone the project repository: https://github.com/raparthisaikiran/csci610-project1.git
 
 * Navigate to the project directory: cd your-project
 
@@ -19,7 +19,7 @@ Follow these steps to set up your Rust project:
 
 To Run shell script
 
-Open terminala and execute following command: 
+Open terminala and execute following command in the parent directory: 
 * chmod +X run_program.sh
 * ./run_program
 
