@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local, LocalResult, TimeZone};
 use filetime::FileTime;
 use rand::seq::SliceRandom;
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 use std::{
     fs,
     path::PathBuf,
@@ -56,9 +56,8 @@ fn read_dir(path: &PathBuf) -> Vec<Vec<PathBuf>> {
         .filter_map(|entry| entry.ok())
     {
         if entry.metadata().unwrap().is_dir()
-            && entry.path() != path
-            && (entry.path().display().to_string().ends_with("left")
-                || entry.path().display().to_string().ends_with("right"))
+            && entry.path() != path 
+            && (entry.path().display().to_string().ends_with("left") || entry.path().display().to_string().ends_with("right"))
         {
             dir.push(PathBuf::from(entry.path().display().to_string()));
             if dir.len() == 2 {
@@ -99,26 +98,18 @@ fn read_files_from_dir(path: &PathBuf) -> Vec<String> {
     files.shuffle(&mut rng);
     files
 }
-
+// This function takes a PathBuf object that points to the source directory, and copies all files in the directory
+// and its subdirectories to a new directory named "full_dataset" with two subdirectories named "left" and "right".
 fn copy_files_to_unified_dir(source_path: &PathBuf) {
-    let mut destination_path = PathBuf::new();
-    destination_path.push("full_dataset");
-    // Create the destination directory if it doesn't exist
-    if !destination_path.exists() {
-        match fs::create_dir_all(&destination_path) {
-            Ok(_) => {
-                fs::create_dir("full_dataset/left");
-                fs::create_dir("full_dataset/right");
-                println!("Unified directory created sucessfully");
-            }
-            Err(e) => println!("Error in creating unified directory, error:{}",e),
-        }
-    }
+    // Create the destination directory
+    let destination_path = create_dir();
+    // Walk through the source directory recursively, filter out only the files, and iterate over each file
     for entry in WalkDir::new(&source_path)
         .into_iter()
         .filter_map(|entry| entry.ok())
         .filter(|entry| entry.file_type().is_file())
     {
+        // Extract the file name from the file path
         let file_name = entry
             .path()
             .file_name()
@@ -126,26 +117,68 @@ fn copy_files_to_unified_dir(source_path: &PathBuf) {
             .to_str()
             .unwrap()
             .to_string();
+        // Clone the destination path and append "left" or "right" to the path based on the parent directory name
         let mut destination_path = destination_path.clone();
-        if entry.path().parent().unwrap().ends_with("left"){
+        if entry.path().parent().unwrap().ends_with("left") {
             destination_path.push("left")
-        }
-        else if  entry.path().parent().unwrap().ends_with("right"){
+        } else if entry.path().parent().unwrap().ends_with("right") {
             destination_path.push("right")
         }
-        destination_path.push(PathBuf::from(
-            entry.path().to_str().unwrap().replace("/", "-"),
-        ));
-        match fs::rename(entry.path(), destination_path) {
+        // Extract the family name from the file path, replace the slashes with underscores, and create a new name
+        let family_name = entry
+            .path()
+            .ancestors()
+            .nth(2)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .replace("/", "_");
+        let new_name = format!("{}_{}", family_name, file_name);
+        // Append the new name to the destination path and move the file to the new location
+        destination_path.push(PathBuf::from(new_name));
+        match fs::rename(entry.path(), &destination_path) {
+            // Print a message if the file was moved successfully
             Ok(_) => {
-                println!("{} moved to unified directory:full_dataset", &file_name)
+                println!(
+                    "moving file from: {:?} to unified directory:{:?}",
+                    &entry.path(),
+                    &destination_path
+                )
             }
+            // Print an error message if there was an error moving the file
             Err(e) => println!(
-                "Error moving file {:?}: {} to unified directory",
-                &file_name, e
+                "Error moving from: {:?} to unified directory:{:?}, Message:{:?}",
+                &entry.path(),
+                &destination_path,
+                e
             ),
         };
     }
+}
+
+// This function creates a new directory named "full_dataset" with two subdirectories named "left" and "right".
+// If the directory already exists, it will be deleted and recreated.
+fn create_dir() -> PathBuf {
+    // Create a new PathBuf object and append the directory name
+    let mut path = PathBuf::new();
+    path.push("full_dataset");
+    // Delete the directory if it already exists
+    if path.exists() {
+        fs::remove_dir_all(&path).unwrap();
+    }
+    // Create the directory and its subdirectories
+    if !path.exists() {
+        match fs::create_dir_all(&path) {
+            // Print an error message if there was an error creating the directory
+            Ok(_) => {
+                fs::create_dir("full_dataset/left").unwrap();
+                fs::create_dir("full_dataset/right").unwrap();
+            }
+            Err(e) => println!("Error in creating unified directory, error:{}", e),
+        }
+    }
+    // Return the PathBuf object
+    path
 }
 
 /**
