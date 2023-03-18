@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local, LocalResult, TimeZone};
 use filetime::FileTime;
 use rand::seq::SliceRandom;
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
 use std::{
     fs,
     path::PathBuf,
@@ -78,6 +78,7 @@ fn read_dir(path: &PathBuf) -> Vec<Vec<PathBuf>> {
  */
 
 fn read_files_from_dir(path: &PathBuf) -> Vec<String> {
+    let mut rng = rand::thread_rng();
     let mut files = vec![];
     for entry in WalkDir::new(path)
         .max_depth(1)
@@ -95,6 +96,7 @@ fn read_files_from_dir(path: &PathBuf) -> Vec<String> {
                 .to_string(),
         );
     }
+    files.shuffle(&mut rng);
     files
 }
 
@@ -105,6 +107,8 @@ fn copy_files_to_unified_dir(source_path: &PathBuf) {
     if !destination_path.exists() {
         match fs::create_dir_all(&destination_path) {
             Ok(_) => {
+                fs::create_dir("full_dataset/left");
+                fs::create_dir("full_dataset/right");
                 println!("Unified directory created sucessfully");
             }
             Err(e) => println!("Error in creating unified directory, error:{}",e),
@@ -123,10 +127,15 @@ fn copy_files_to_unified_dir(source_path: &PathBuf) {
             .unwrap()
             .to_string();
         let mut destination_path = destination_path.clone();
+        if entry.path().parent().unwrap().ends_with("left"){
+            destination_path.push("left")
+        }
+        else if  entry.path().parent().unwrap().ends_with("right"){
+            destination_path.push("right")
+        }
         destination_path.push(PathBuf::from(
             entry.path().to_str().unwrap().replace("/", "-"),
         ));
-        println!("{:?}", destination_path);
         match fs::rename(entry.path(), destination_path) {
             Ok(_) => {
                 println!("{} moved to unified directory:full_dataset", &file_name)
